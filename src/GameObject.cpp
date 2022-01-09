@@ -1,22 +1,22 @@
-#include "Object.h"
+#include "GameObject.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #define rand_from_0f_to_90f (float)rand()/(float)RAND_MAX*90.0f
 
-Object::Object(glm::vec3 pos, float objSize) : position(pos), size(objSize) {}
+GameObject::GameObject(glm::vec3 pos, float objSize) : position(pos), size(objSize) {}
 
-void Object::connectShader(Shader *shader)
+void GameObject::connectShader(Shader *shader)
 {
     shaderObject = shader;
 }
 
-Shader* Object::getShader()
+Shader* GameObject::getShader()
 {
     return shaderObject;
 }
 
-void Object::addTexture(const std::string &imagePath)
+void GameObject::addTexture(const std::string &imagePath)
 {
     glGenTextures(1, &texture);
 
@@ -55,7 +55,7 @@ void Object::addTexture(const std::string &imagePath)
 //    glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-void Object::setVertexAttributes()
+void GameObject::setVertexAttributes()
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -75,7 +75,7 @@ void Object::setVertexAttributes()
     glEnableVertexAttribArray(2);
 }
 
-void Object::setLighting(DirLighting *light)
+void GameObject::setLighting(DirLighting *light)
 {
     shaderObject->use();
     shaderObject->setVec3("dirLight.direction", light->getDirection());
@@ -84,35 +84,35 @@ void Object::setLighting(DirLighting *light)
     shaderObject->setVec3("dirLight.specular", light->getSpecular());
 }
 
-void Object::setPosition(float x, float y, float z)
+void GameObject::setPosition(float x, float y, float z)
 {
     position = glm::vec3(x, y, z);
 }
 
-void Object::setRotate(float angle, float xRot, float yRot, float zRot)
+void GameObject::setRotate(float angle, float xRot, float yRot, float zRot)
 {
     rotateAngle = angle;
     rotatePosition = glm::vec3(xRot, yRot, zRot);
 }
 
 
-std::vector<float> &Object::getVertices()
+std::vector<float> &GameObject::getVertices()
 {
     return vertices;
 }
 
-std::vector<unsigned int> &Object::getIndices()
+std::vector<unsigned int> &GameObject::getIndices()
 {
     return indices;
 }
 
-void Object::draw(Shader *shader)
+void GameObject::draw(Shader *shader)
 {
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 }
 
-Plane::Plane(glm::vec3 pos, float s) : Object(pos, s)
+Plane::Plane(glm::vec3 pos, float s) : GameObject(pos, s)
 {
     float ratio = 3.5f / size;
     btCollisionShape* groundShape = new btBoxShape(btVector3(size, 0.0f, size * ratio));
@@ -160,7 +160,7 @@ void Plane::setModelMatrix()
 }
 
 
-Cube::Cube(glm::vec3 pos, float objSize) : Object(pos, objSize)
+Cube::Cube(glm::vec3 pos, float objSize) : GameObject(pos, objSize)
 {
     btCollisionShape* cubeShape = new btBoxShape(btVector3(size, size, size));
 

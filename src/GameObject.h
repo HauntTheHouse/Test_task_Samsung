@@ -10,14 +10,7 @@
 #include <btBulletDynamicsCommon.h>
 
 
-//struct Material
-//{
-//    glm::vec3 diffuse;
-//    glm::vec3 specular;
-//    float shininess;
-//};
-
-class Object
+class GameObject
 {
 protected:
 //    Material material{};
@@ -41,8 +34,8 @@ protected:
     virtual void fillIndices() = 0;
 
 public:
-    Object(glm::vec3 pos, float objSize);
-    virtual ~Object() { delete shaderObject; };
+    GameObject(glm::vec3 pos, float objSize);
+    virtual ~GameObject() { delete shaderObject; };
     virtual void connectShader(Shader *shader);
     virtual Shader* getShader();
     virtual void addTexture(const std::string &imagePath);
@@ -61,7 +54,7 @@ public:
     virtual void draw(Shader *shader);
 };
 
-class Plane : public Object
+class Plane : public GameObject
 {
 private:
     void fillVertices() override;
@@ -74,7 +67,7 @@ public:
 //    void draw(Shader *shader) override;
 };
 
-class Cube : public Object
+class Cube : public GameObject
 {
 private:
     void fillVertices() override;

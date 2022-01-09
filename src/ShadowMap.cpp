@@ -22,7 +22,7 @@ ShadowMap::ShadowMap(const std::string &vertexPath, const std::string &fragmentP
 }
 
 
-void ShadowMap::drawSceneRelateToLighting(const std::vector<Object*> &objects)
+void ShadowMap::drawSceneRelateToLighting(const std::vector<GameObject*> &objects)
 {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);

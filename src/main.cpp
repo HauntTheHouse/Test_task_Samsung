@@ -6,7 +6,7 @@
 #include <btBulletDynamicsCommon.h>
 #include <ctime>
 #include "DirLighting.h"
-#include "Object.h"
+#include "GameObject.h"
 #include "ShadowMap.h"
 
 #define rand_from_0f_to_1f (float)rand()/(float)RAND_MAX
@@ -18,7 +18,7 @@ int SCREEN_HEIGHT = 600;
 
 double deltaTime, lastFrame;
 
-std::vector<Object*> objects;
+std::vector<GameObject*> objects;
 DirLighting *lighting;
 ShadowMap *shadowMap;
 

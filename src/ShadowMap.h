@@ -3,7 +3,7 @@
 
 #include "Shader.h"
 #include "DirLighting.h"
-#include "Object.h"
+#include "GameObject.h"
 
 class ShadowMap
 {
@@ -20,7 +20,7 @@ public:
 //    void setLightSpaceMatrix(DirLighting *lighting);
     Shader* getShader() { return depthShader; }
     unsigned int getDepthMap() const { return depthMap; }
-    void drawSceneRelateToLighting(const std::vector<Object*> &objects);
+    void drawSceneRelateToLighting(const std::vector<GameObject*> &objects);
 };
 
 
