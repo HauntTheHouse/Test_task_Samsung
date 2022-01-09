@@ -1,10 +1,6 @@
-//
-// Created by Dell on 22.03.2021.
-//
-
 #include "Object.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "../lib/stb_image.h"
+#include <stb_image.h>
 
 #define rand_from_0f_to_90f (float)rand()/(float)RAND_MAX*90.0f
 

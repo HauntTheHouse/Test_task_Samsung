@@ -1,9 +1,5 @@
-//
-// Created by Dell on 22.03.2021.
-//
-
-#ifndef TEST_TASK_SAMSUNG_OBJECT_H
-#define TEST_TASK_SAMSUNG_OBJECT_H
+#ifndef OBJECT
+#define OBJECT
 
 #include <vector>
 #include <set>
@@ -91,4 +87,4 @@ public:
 //    void draw(Shader *shader) override;
 };
 
-#endif //TEST_TASK_SAMSUNG_OBJECT_H
+#endif // OBJECT

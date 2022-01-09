@@ -1,7 +1,3 @@
-//
-// Created by Dell on 27.03.2021.
-//
-
 #include "ShadowMap.h"
 
 ShadowMap::ShadowMap(const std::string &vertexPath, const std::string &fragmentPath)

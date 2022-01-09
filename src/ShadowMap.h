@@ -1,9 +1,5 @@
-//
-// Created by Dell on 27.03.2021.
-//
-
-#ifndef TEST_TASK_SAMSUNG_SHADOWMAP_H
-#define TEST_TASK_SAMSUNG_SHADOWMAP_H
+#ifndef SHADOW_MAP
+#define SHADOW_MAP
 
 #include "Shader.h"
 #include "DirLighting.h"
@@ -28,4 +24,4 @@ public:
 };
 
 
-#endif //TEST_TASK_SAMSUNG_SHADOWMAP_H
+#endif // SHADOW_MAP

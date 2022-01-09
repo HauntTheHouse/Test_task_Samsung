@@ -1,9 +1,5 @@
-//
-// Created by Dell on 23.03.2021.
-//
-
-#ifndef TEST_TASK_SAMSUNG_DIRLIGHTING_H
-#define TEST_TASK_SAMSUNG_DIRLIGHTING_H
+#ifndef DIR_LIGHTING
+#define DIR_LIGHTING
 
 class DirLighting
 {
@@ -30,4 +26,4 @@ public:
     glm::vec3 getSpecular()  { return specular;  }
 };
 
-#endif //TEST_TASK_SAMSUNG_DIRLIGHTING_H
+#endif // DIR_LIGHTING
