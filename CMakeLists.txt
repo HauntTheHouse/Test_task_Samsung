@@ -27,3 +27,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE lib/bullet3/src)
 
 # add stb
 target_include_directories(${PROJECT_NAME} PRIVATE lib/stb)
+
+file(COPY shaders DESTINATION .)
+file(COPY images DESTINATION .)

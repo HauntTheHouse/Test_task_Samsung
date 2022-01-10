@@ -32,7 +32,6 @@ glm::mat4 lightSpaceMatrix;
 
 btDiscreteDynamicsWorld* dynamicsWorld;
 
-//void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processKeyboardInput(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processMouseInput(GLFWwindow *window, int button, int action, int mods);
 
@@ -80,8 +79,8 @@ int main()
     initGlobals();
 
     objects.push_back(new Plane(glm::vec3(0.0f, 0.0f, 0.0f), 2.5f));
-    objects.front()->connectShader(new Shader("../shaders/object.vert", "../shaders/object.frag"));
-    objects.front()->addTexture("../images/king1.png");
+    objects.front()->connectShader(new Shader("shaders/object.vert", "shaders/object.frag"));
+    objects.front()->addTexture("images/king1.png");
     objects.front()->setVertexAttributes();
     objects.front()->setLighting(lighting);
     objects.front()->getShader()->setMat4("view", view);
@@ -190,7 +189,7 @@ void initGlobals()
     lighting->setLightPower(0.3f, 1.0f, 0.5f);
     lighting->setDirLight(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
-    shadowMap = new ShadowMap("../shaders/depthShader.vert", "../shaders/depthShader.frag");
+    shadowMap = new ShadowMap("shaders/depthShader.vert", "shaders/depthShader.frag");
 
     view = glm::mat4(1.0f);
     front.y = glm::tan(glm::radians(PITCH));
@@ -225,8 +224,8 @@ void processMouseInput(GLFWwindow *window, int button, int action, int mods)
         glm::vec3 coords = findRayIntersectionWithXYplaneAndXZplane(ray, 0.3f);
 
         objects.push_back(new Cube(coords, 0.3f));
-        objects.back()->connectShader(new Shader("../shaders/object.vert", "../shaders/object.frag"));
-        objects.back()->addTexture("../images/dice5.png");
+        objects.back()->connectShader(new Shader("shaders/object.vert", "shaders/object.frag"));
+        objects.back()->addTexture("images/dice5.png");
         objects.back()->setVertexAttributes();
         objects.back()->setLighting(lighting);
         objects.back()->getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f,rand_from_0f_to_1f,rand_from_0f_to_1f));
