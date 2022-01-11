@@ -3,12 +3,6 @@
 
 class DirLighting
 {
-protected:
-    glm::vec3 direction{};
-    glm::vec3 ambient{};
-    glm::vec3 diffuse{};
-    glm::vec3 specular{};
-    float ambientPow{}, diffusePow{}, specularPow{};
 public:
     DirLighting() = default;
     void setLightPower(float ambPow, float diffPow, float specPow)
@@ -20,10 +14,17 @@ public:
        direction = dir;
        ambient = ambientPow * color; diffuse = diffusePow * color; specular = specularPow * color;
     }
-    glm::vec3 getDirection() { return direction; }
-    glm::vec3 getAmbient()   { return ambient;   }
-    glm::vec3 getDiffuse()   { return diffuse;   }
-    glm::vec3 getSpecular()  { return specular;  }
+    glm::vec3 getDirection() const { return direction; }
+    glm::vec3 getAmbient() const   { return ambient;   }
+    glm::vec3 getDiffuse() const   { return diffuse;   }
+    glm::vec3 getSpecular() const  { return specular;  }
+
+protected:
+    glm::vec3 direction{};
+    glm::vec3 ambient{};
+    glm::vec3 diffuse{};
+    glm::vec3 specular{};
+    float ambientPow{}, diffusePow{}, specularPow{};
 };
 
 #endif // DIR_LIGHTING

@@ -1,24 +1,37 @@
 #include "GameObject.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
 #define rand_from_0f_to_90f (float)rand()/(float)RAND_MAX*90.0f
+#define rand_from_0f_to_1f (float)rand()/(float)RAND_MAX
+#define rand_from_n2f_to_2f rand_from_0f_to_1f*4.0f-2.0f
+#define rand_from_2f_to_6f rand_from_0f_to_1f*4.0f+2.0f
 
-GameObject::GameObject(glm::vec3 pos, float objSize) : position(pos), size(objSize) {}
+GameObject::GameObject(const glm::vec3& pos, float objSize)
+    : position(pos)
+    , size(objSize)
+    , rotateAngle(rand_from_0f_to_90f)
+    , rotatePosition(glm::vec3(rand_from_0f_to_90f, rand_from_0f_to_90f, rand_from_0f_to_90f))
+{
+}
 
-void GameObject::connectShader(Shader *shader)
+void GameObject::connectShader(const std::string& vertexPath, const std::string& fragmentPath)
+{
+    shaderObject.init(vertexPath, fragmentPath);
+}
+
+void GameObject::connectShader(Shader shader)
 {
     shaderObject = shader;
 }
 
 Shader* GameObject::getShader()
 {
-    return shaderObject;
+    return &shaderObject;
 }
 
 void GameObject::addTexture(const std::string &imagePath)
 {
-    glGenTextures(1, &texture);
+    glGenTextures(1, &textureId);
 
     stbi_set_flip_vertically_on_load(true);
     int imageWidth, imageHeight, nrComponents;
@@ -33,7 +46,7 @@ void GameObject::addTexture(const std::string &imagePath)
         else if (nrComponents == 4)
             format = GL_RGBA;
 
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, textureId);
         glTexImage2D(GL_TEXTURE_2D, 0, format, imageWidth, imageHeight, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -50,9 +63,6 @@ void GameObject::addTexture(const std::string &imagePath)
         std::cout << "Texture failed to load at path: " << imagePath << std::endl;
         stbi_image_free(data);
     }
-//
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, texture);
 }
 
 void GameObject::setVertexAttributes()
@@ -75,13 +85,13 @@ void GameObject::setVertexAttributes()
     glEnableVertexAttribArray(2);
 }
 
-void GameObject::setLighting(DirLighting *light)
+void GameObject::setLighting(const DirLighting& light)
 {
-    shaderObject->use();
-    shaderObject->setVec3("dirLight.direction", light->getDirection());
-    shaderObject->setVec3("dirLight.ambient", light->getAmbient());
-    shaderObject->setVec3("dirLight.diffuse", light->getDiffuse());
-    shaderObject->setVec3("dirLight.specular", light->getSpecular());
+    shaderObject.use();
+    shaderObject.setVec3("dirLight.direction", light.getDirection());
+    shaderObject.setVec3("dirLight.ambient", light.getAmbient());
+    shaderObject.setVec3("dirLight.diffuse", light.getDiffuse());
+    shaderObject.setVec3("dirLight.specular", light.getSpecular());
 }
 
 void GameObject::setPosition(float x, float y, float z)
@@ -96,43 +106,35 @@ void GameObject::setRotate(float angle, float xRot, float yRot, float zRot)
 }
 
 
-std::vector<float> &GameObject::getVertices()
+const std::vector<float>& GameObject::getVertices() const
 {
     return vertices;
 }
 
-std::vector<unsigned int> &GameObject::getIndices()
+const std::vector<unsigned int>& GameObject::getIndices() const
 {
     return indices;
 }
 
-void GameObject::draw(Shader *shader)
+void GameObject::draw() const
 {
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 }
 
-Plane::Plane(glm::vec3 pos, float s) : GameObject(pos, s)
+Card::Card(const glm::vec3& pos, float aSize)
+    : GameObject(pos, aSize)
+    , shape(btVector3(aSize, 0.0f, 3.5f))
+    , body(0.0f, nullptr, &shape)
 {
-    float ratio = 3.5f / size;
-    btCollisionShape* groundShape = new btBoxShape(btVector3(size, 0.0f, size * ratio));
+    rotateAngle = 0.0f;
+    body.setFriction(static_cast<btScalar>(1.5));
 
-    btTransform groundTransform;
-    groundTransform.setIdentity();
-    groundTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-
-    btScalar mass(0.0f);
-    btVector3 localInertia(0.0f, 0.0f, 0.0f);
-
-    btDefaultMotionState *myMotionState = new btDefaultMotionState(groundTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
-    body = new btRigidBody(rbInfo);
-
-    Plane::fillVertices();
-    Plane::fillIndices();
+    Card::fillVertices();
+    Card::fillIndices();
 }
 
-void Plane::fillVertices()
+void Card::fillVertices()
 {
     vertices = {
             -1.0f, 0.0f,  1.0f,     0.0f, 1.0f, 0.0f,     0.0f,  0.0f,
@@ -142,46 +144,39 @@ void Plane::fillVertices()
     };
 }
 
-void Plane::fillIndices()
+void Card::fillIndices()
 {
     indices = {
             0, 2, 1,
             0, 3, 2,
     };
 }
-void Plane::setModelMatrix()
+void Card::setModelMatrix()
 {
     model = glm::mat4(1.0f);
     model = glm::translate(model, position);
-    if (glm::abs(rotateAngle) > 0.0001)
-        model = glm::rotate(model, rotateAngle, rotatePosition);
+    model = glm::rotate(model, rotateAngle, rotatePosition);
     float ratio = 3.5f / size;
     model = glm::scale(model, glm::vec3(size, size, size * ratio));
 }
 
 
-Cube::Cube(glm::vec3 pos, float objSize) : GameObject(pos, objSize)
+Cube::Cube(const glm::vec3& pos, float objSize)
+    : GameObject(pos, objSize)
+    , shape(btVector3(size, size, size))
+    , motionState(position, rotateAngle, rotatePosition)
+    , body(1.0f, &motionState, &shape, calculateLocalInertia())
+
 {
-    btCollisionShape* cubeShape = new btBoxShape(btVector3(size, size, size));
-
-    btTransform startTransform;
-    startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-
-
-    btQuaternion q(btVector3(rand_from_0f_to_90f,rand_from_0f_to_90f,rand_from_0f_to_90f),rand_from_0f_to_90f);
-    startTransform.setRotation(q);
-
-    btScalar mass(1.0f);
-    btVector3 localInertia(0.0f, 0.0f, 0.0f);
-    cubeShape->calculateLocalInertia(mass, localInertia);
-
-    btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, cubeShape, localInertia);
-    body = new btRigidBody(rbInfo);
-
     Cube::fillVertices();
     Cube::fillIndices();
+}
+
+btVector3 Cube::calculateLocalInertia()
+{
+    btVector3 localInertia(0.0f, 0.0f, 0.0f);
+    shape.calculateLocalInertia(1.0f, localInertia);
+    return localInertia;
 }
 
 void Cube::fillVertices() {
@@ -248,9 +243,13 @@ void Cube::fillIndices() {
 
 void Cube::setModelMatrix()
 {
+    if (position.y < -10.0f)
+    {
+        body.setLinearVelocity(btVector3(0,0,0));
+        body.setWorldTransform(btTransform(btQuaternion::getIdentity(), btVector3(rand_from_n2f_to_2f, rand_from_2f_to_6f, rand_from_n2f_to_2f)));
+    }
     model = glm::mat4(1.0f);
     model = glm::translate(model, position);
-    if (glm::abs(rotateAngle) > 0.0001)
-        model = glm::rotate(model, rotateAngle, rotatePosition);
+    model = glm::rotate(model, rotateAngle, rotatePosition);
     model = glm::scale(model, glm::vec3(size));
 }

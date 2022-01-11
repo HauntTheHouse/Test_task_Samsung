@@ -5,22 +5,24 @@
 #include <glm/glm.hpp>
 #include <btBulletDynamicsCommon.h>
 #include <ctime>
+
 #include "DirLighting.h"
 #include "GameObject.h"
 #include "ShadowMap.h"
 
 #define rand_from_0f_to_1f (float)rand()/(float)RAND_MAX
-#define rand_from_n2f_to_2f rand_from_0f_to_1f*4.0f-2.0f
-#define rand_from_2f_to_6f rand_from_0f_to_1f*4.0f+2.0f
 
-int SCREEN_WIDTH = 800;
-int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
 
 double deltaTime, lastFrame;
 
-std::vector<GameObject*> objects;
-DirLighting *lighting;
-ShadowMap *shadowMap;
+Card card(glm::vec3(0.0f, 0.0f, 0.0f), 2.5f);
+std::vector<std::shared_ptr<Cube>> cubes;
+
+DirLighting lighting;
+ShadowMap shadowMap;
+Shader shaderObj;
 
 glm::vec3 camPos;
 glm::vec3 front;
@@ -63,6 +65,7 @@ int main()
         glfwTerminate();
         return -1;
     }
+
     glfwSetKeyCallback(window, processKeyboardInput);
     glfwSetMouseButtonCallback(window, processMouseInput);
     glEnable(GL_DEPTH_TEST);
@@ -78,76 +81,70 @@ int main()
 
     initGlobals();
 
-    objects.push_back(new Plane(glm::vec3(0.0f, 0.0f, 0.0f), 2.5f));
-    objects.front()->connectShader(new Shader("shaders/object.vert", "shaders/object.frag"));
-    objects.front()->addTexture("images/king1.png");
-    objects.front()->setVertexAttributes();
-    objects.front()->setLighting(lighting);
-    objects.front()->getShader()->setMat4("view", view);
-    objects.front()->getShader()->setMat4("projection", projection);
-    objects.front()->getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-    dynamicsWorld->addRigidBody(objects.front()->getRigidBody());
+    card.connectShader(Shader(shaderObj.getVertexShaderId(), shaderObj.getFragmentShaderId()));
+    card.addTexture("images/king1.png");
+    card.setVertexAttributes();
+    card.setLighting(lighting);
+    card.getShader()->setMat4("view", view);
+    card.getShader()->setMat4("projection", projection);
+    card.getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    card.setModelMatrix();
 
-    shadowMap->getShader()->use();
-    shadowMap->getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    dynamicsWorld->addRigidBody(card.getRigidBody());
 
-    while(!glfwWindowShouldClose(window)) {
+    shadowMap.getShader()->use();
+    shadowMap.getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+    while(!glfwWindowShouldClose(window))
+    {
         double currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         dynamicsWorld->stepSimulation(deltaTime);
-        for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
-        {
-            btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-            btRigidBody* body = btRigidBody::upcast(obj);
-            btTransform trans;
-            if (body && body->getMotionState())
-                body->getMotionState()->getWorldTransform(trans);
-            else
-                trans = obj->getWorldTransform();
-
-
-            objects[i]->setPosition(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ());
-            objects[i]->setRotate(trans.getRotation().getAngle(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ());
-
-            if (trans.getOrigin().getY() < -10.0f)
-            {
-                trans.setIdentity();
-                trans.setOrigin(btVector3(rand_from_n2f_to_2f, rand_from_2f_to_6f, rand_from_n2f_to_2f));
-                body->setLinearVelocity(btVector3(0,0,0));
-                obj->setWorldTransform(trans);
-            }
-        }
 
         glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-        projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(45.0f), SCREEN_WIDTH / static_cast<float>(SCREEN_HEIGHT), 0.1f, 100.0f);
+        //glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+        //projection = glm::mat4(1.0f);
+        //projection = glm::perspective(glm::radians(45.0f), SCREEN_WIDTH / static_cast<float>(SCREEN_HEIGHT), 0.1f, 100.0f);
 
-        for (auto object : objects)
-            object->setModelMatrix();
+        for (const auto cube : cubes)
+            cube->setModelMatrix();
 
-        shadowMap->getShader()->use();
-        shadowMap->drawSceneRelateToLighting(objects);
+        shadowMap.getShader()->use();
+        shadowMap.drawSceneRelateToLighting(cubes);
 
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        for (auto object : objects)
+
+        card.getShader()->use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, card.getTextureId());
+        card.getShader()->setInt("objectTexture", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMap());
+        card.getShader()->setInt("shadowMap", 1);
+
+        card.getShader()->setMat4("model", card.getModelMatrix());
+        card.getShader()->setMat4("projection", projection);
+        card.draw();
+
+        for (const auto& cube : cubes)
         {
-            object->getShader()->use();
+            cube->getShader()->use();
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, object->getTexture());
-            object->getShader()->setInt("objectTexture", 0);
+            glBindTexture(GL_TEXTURE_2D, cube->getTextureId());
+            cube->getShader()->setInt("objectTexture", 0);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, shadowMap->getDepthMap());
-            object->getShader()->setInt("shadowMap", 1);
+            glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMap());
+            cube->getShader()->setInt("shadowMap", 1);
 
-            object->getShader()->setMat4("model", object->getModelMatrix());
-            object->getShader()->setMat4("projection", projection);
-            object->draw(object->getShader());
+            cube->getShader()->setMat4("model", cube->getModelMatrix());
+            cube->getShader()->setMat4("projection", projection);
+            cube->draw();
         }
 
         glfwSwapBuffers(window);
@@ -155,26 +152,11 @@ int main()
     }
     glfwTerminate();
 
-    for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
-    {
-        btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-        btRigidBody* body = btRigidBody::upcast(obj);
-        if (body && body->getMotionState())
-            delete body->getMotionState();
-        dynamicsWorld->removeCollisionObject(obj);
-        delete obj;
-    }
     delete dynamicsWorld;
     delete solver;
     delete overlappingPairCache;
     delete dispatcher;
     delete collisionConfiguration;
-
-    delete lighting;
-    delete shadowMap;
-
-    for (auto object : objects)
-        delete object;
 
     return 0;
 }
@@ -185,11 +167,12 @@ void initGlobals()
     camPos = glm::vec3(0.0f, 5.0f, 11.0f);
     front = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    lighting = new DirLighting();
-    lighting->setLightPower(0.3f, 1.0f, 0.5f);
-    lighting->setDirLight(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    lighting.setLightPower(0.3f, 1.0f, 0.5f);
+    lighting.setDirLight(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
-    shadowMap = new ShadowMap("shaders/depthShader.vert", "shaders/depthShader.frag");
+    cubes.reserve(128);
+    shaderObj.init("shaders/object.vert", "shaders/object.frag");
+    shadowMap.init("shaders/depthShader.vert", "shaders/depthShader.frag");
 
     view = glm::mat4(1.0f);
     front.y = glm::tan(glm::radians(PITCH));
@@ -202,7 +185,7 @@ void initGlobals()
 
     float nearPlane = 1.0f, farPlane = 20.0f;
     glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-    glm::vec3 lightPosition = lighting->getDirection();
+    glm::vec3 lightPosition = lighting.getDirection();
     lightPosition *= -5;
     glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     lightSpaceMatrix = lightProjection * lightView;
@@ -211,7 +194,9 @@ void initGlobals()
 void processKeyboardInput(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
         glfwSetWindowShouldClose(window, true);
+    }
 }
 
 void processMouseInput(GLFWwindow *window, int button, int action, int mods)
@@ -223,16 +208,17 @@ void processMouseInput(GLFWwindow *window, int button, int action, int mods)
         glm::vec3 ray = convertScreenCoordsToWorldRayVector(xpos, ypos);
         glm::vec3 coords = findRayIntersectionWithXYplaneAndXZplane(ray, 0.3f);
 
-        objects.push_back(new Cube(coords, 0.3f));
-        objects.back()->connectShader(new Shader("shaders/object.vert", "shaders/object.frag"));
-        objects.back()->addTexture("images/dice5.png");
-        objects.back()->setVertexAttributes();
-        objects.back()->setLighting(lighting);
-        objects.back()->getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f,rand_from_0f_to_1f,rand_from_0f_to_1f));
-        objects.back()->getShader()->setMat4("view", view);
-        objects.back()->getShader()->setMat4("projection", projection);
-        objects.back()->getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-        dynamicsWorld->addRigidBody(objects.back()->getRigidBody());
+        const auto cube = std::make_shared<Cube>(coords, 0.3f);
+        cube->connectShader(Shader(shaderObj.getVertexShaderId(), shaderObj.getFragmentShaderId()));
+        cube->addTexture("images/dice5.png");
+        cube->setVertexAttributes();
+        cube->setLighting(lighting);
+        cube->getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f,rand_from_0f_to_1f,rand_from_0f_to_1f));
+        cube->getShader()->setMat4("view", view);
+        cube->getShader()->setMat4("projection", projection);
+        cube->getShader()->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        dynamicsWorld->addRigidBody(cube->getRigidBody());
+        cubes.emplace_back(cube);
     }
 }
 
@@ -258,9 +244,9 @@ glm::vec3 findRayIntersectionWithXYplaneAndXZplane(glm::vec3 ray, float cubeSize
     float accuracy = 0.01f;
     glm::vec3 objPos = camPos + ray * lengthRay;
 
-    while (glm::abs(objPos.z - 0.0f) > accuracy & glm::abs(objPos.y - cubeSize) > accuracy)
+    while (glm::abs(objPos.z - 0.0f) > accuracy && glm::abs(objPos.y - cubeSize) > accuracy)
     {
-        if (objPos.z < 0.0f | objPos.y < cubeSize)
+        if (objPos.z < 0.0f || objPos.y < cubeSize)
         {
             scaleRay /= 2.0f;
             lengthRay -= scaleRay;
@@ -275,4 +261,3 @@ glm::vec3 findRayIntersectionWithXYplaneAndXZplane(glm::vec3 ray, float cubeSize
     }
     return objPos;
 }
-

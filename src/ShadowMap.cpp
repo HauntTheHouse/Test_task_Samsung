@@ -2,7 +2,12 @@
 
 ShadowMap::ShadowMap(const std::string &vertexPath, const std::string &fragmentPath)
 {
-    depthShader = new Shader(vertexPath.c_str(), fragmentPath.c_str());
+    init(vertexPath, fragmentPath);
+}
+
+void ShadowMap::init(const std::string& vertexPath, const std::string& fragmentPath)
+{
+    depthShader.init(vertexPath, fragmentPath);
 
     glGenFramebuffers(1, &depthMapFBO);
 
@@ -22,15 +27,15 @@ ShadowMap::ShadowMap(const std::string &vertexPath, const std::string &fragmentP
 }
 
 
-void ShadowMap::drawSceneRelateToLighting(const std::vector<GameObject*> &objects)
+void ShadowMap::drawSceneRelateToLighting(const std::vector<std::shared_ptr<Cube>>& cubes)
 {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-    for (auto object : objects)
+    for (const auto& cube : cubes)
     {
-        depthShader->setMat4("model", object->getModelMatrix());
-        object->draw(depthShader);
+        depthShader.setMat4("model", cube->getModelMatrix());
+        cube->draw();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

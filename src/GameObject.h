@@ -2,18 +2,72 @@
 #define OBJECT
 
 #include <vector>
-#include <set>
 #include <string>
 #include <glm/glm.hpp>
 #include "Shader.h"
 #include "DirLighting.h"
 #include <btBulletDynamicsCommon.h>
 
+class CustomMotionState : public btMotionState
+{
+public:
+    CustomMotionState(glm::vec3& aPosition, float& aRotateAngle, glm::vec3& aRotatePosition)
+        : mPosition(aPosition)
+        , mRotateAngle(aRotateAngle)
+        , mRotatePosition(aRotatePosition)
+    {
+    }
+
+    void getWorldTransform(btTransform& worldTrans) const override
+    {
+        worldTrans.setOrigin(btVector3(mPosition.x, mPosition.y, mPosition.z));
+        worldTrans.setRotation(btQuaternion(btVector3(mRotatePosition.x, mRotatePosition.y, mRotatePosition.z), mRotateAngle));
+    }
+
+    void setWorldTransform(const btTransform& worldTrans) override
+    {
+        mPosition.x = worldTrans.getOrigin().x();
+        mPosition.y = worldTrans.getOrigin().y();
+        mPosition.z = worldTrans.getOrigin().z();
+
+        mRotateAngle = worldTrans.getRotation().getAngle();
+        mRotatePosition.x = worldTrans.getRotation().getAxis().x();
+        mRotatePosition.y = worldTrans.getRotation().getAxis().y();
+        mRotatePosition.z = worldTrans.getRotation().getAxis().z();
+    }
+
+private:
+    glm::vec3& mPosition;
+    float& mRotateAngle;
+    glm::vec3& mRotatePosition;
+};
 
 class GameObject
 {
+public:
+    GameObject(const glm::vec3& pos, float objSize);
+    virtual ~GameObject() {};
+
+    void connectShader(const std::string& vertexPath, const std::string& fragmentPath);
+    void connectShader(Shader shader);
+    Shader* getShader();
+
+    void addTexture(const std::string &imagePath);
+    unsigned int getTextureId() const { return textureId; }
+
+    void setVertexAttributes();
+    void setLighting(const DirLighting& light);
+    virtual void setModelMatrix() = 0;
+    glm::mat4 getModelMatrix() const { return model; };
+
+    void setPosition(float x, float y, float z);
+    void setRotate(float angle, float xRot, float yRot, float zRot);
+
+    const std::vector<float> &getVertices() const;
+    const std::vector<unsigned int> &getIndices() const;
+    void draw() const;
+
 protected:
-//    Material material{};
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 
@@ -21,63 +75,48 @@ protected:
 
     float size;
     glm::vec3 position;
-    float rotateAngle;
-    glm::vec3 rotatePosition;
+    float rotateAngle{ 0.0f };
+    glm::vec3 rotatePosition{ 0.f, 0.f, 0.f };
 
-    btRigidBody* body;
+    GLuint VAO{}, VBO{}, EBO{};
+    GLuint textureId{};
 
-    unsigned int VAO{}, VBO{}, EBO{};
-    unsigned int texture{};
-
-    Shader *shaderObject{};
+    Shader shaderObject;
     virtual void fillVertices() = 0;
     virtual void fillIndices() = 0;
-
-public:
-    GameObject(glm::vec3 pos, float objSize);
-    virtual ~GameObject() { delete shaderObject; };
-    virtual void connectShader(Shader *shader);
-    virtual Shader* getShader();
-    virtual void addTexture(const std::string &imagePath);
-    virtual void setVertexAttributes();
-    virtual void setLighting(DirLighting *light);
-    virtual void setModelMatrix() = 0;
-    virtual unsigned int getTexture() { return texture; }
-    virtual glm::mat4 getModelMatrix() { return model; };
-
-    virtual btRigidBody* getRigidBody() { return body; }
-    virtual void setPosition(float x, float y, float z);
-    virtual void setRotate(float angle, float xRot, float yRot, float zRot);
-
-    virtual std::vector<float> &getVertices();
-    virtual std::vector<unsigned int> &getIndices();
-    virtual void draw(Shader *shader);
 };
 
-class Plane : public GameObject
+class Card : public GameObject
 {
+public:
+    Card(const glm::vec3& pos, float objSize);
+    void setModelMatrix() override;
+    btRigidBody* getRigidBody() { return &body; }
+
 private:
+    btBoxShape shape;
+    btRigidBody body;
+
     void fillVertices() override;
     void fillIndices() override;
-
-public:
-    Plane(glm::vec3 pos, float s);
-//    void addTexture(const std::string &imagePath) override;
-    void setModelMatrix() override;
-//    void draw(Shader *shader) override;
 };
 
 class Cube : public GameObject
 {
+public:
+    Cube(const glm::vec3& pos, float objSize);
+    void setModelMatrix() override;
+    btRigidBody* getRigidBody() { return &body; }
+
 private:
+    btBoxShape shape;
+    CustomMotionState motionState;
+    btRigidBody body;
+
     void fillVertices() override;
     void fillIndices() override;
 
-public:
-    Cube(glm::vec3 pos, float objSize);
-//    void addTexture(const std::string &imagePath) override;
-    void setModelMatrix() override;
-//    void draw(Shader *shader) override;
+    btVector3 calculateLocalInertia();
 };
 
 #endif // OBJECT

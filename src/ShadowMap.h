@@ -8,19 +8,18 @@
 class ShadowMap
 {
 private:
-//    glm::mat4 lightSpaceMatrix{};
-//    DirLighting *lighting;
     const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
     unsigned int depthMapFBO, depthMap;
-    Shader *depthShader;
+    Shader depthShader;
 public:
-    ShadowMap(const std::string &vertexPath, const std::string &fragmentPath);
-    ~ShadowMap() { delete depthShader; }
-//    void setLighting(DirLighting *light);
-//    void setLightSpaceMatrix(DirLighting *lighting);
-    Shader* getShader() { return depthShader; }
+    ShadowMap() = default;
+    ShadowMap(const std::string& vertexPath, const std::string& fragmentPath);
+    ~ShadowMap() {}
+    void init(const std::string& vertexPath, const std::string& fragmentPath);
+
+    Shader* getShader() { return &depthShader; }
     unsigned int getDepthMap() const { return depthMap; }
-    void drawSceneRelateToLighting(const std::vector<GameObject*> &objects);
+    void drawSceneRelateToLighting(const std::vector<std::shared_ptr<Cube>>& cubes);
 };
 
 

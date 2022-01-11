@@ -5,7 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD_LIBRARIES "-static-libgcc -static-libstdc++ ${CMAKE_CXX_STANDARD_LIBRARIES}")
 
-add_executable(${PROJECT_NAME} src/main.cpp src/Shader.h src/GameObject.cpp src/GameObject.h src/DirLighting.h src/ShadowMap.cpp src/ShadowMap.h lib/glad/src/glad.c)
+add_executable(${PROJECT_NAME}
+	src/main.cpp
+	src/Shader.cpp src/Shader.h
+	src/GameObject.cpp src/GameObject.h
+	src/ShadowMap.cpp src/ShadowMap.h
+	src/DirLighting.h
+	lib/glad/src/glad.c)
 
 # add GLFW
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
