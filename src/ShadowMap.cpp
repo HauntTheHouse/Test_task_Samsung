@@ -1,4 +1,5 @@
 #include "ShadowMap.h"
+#include <array>
 
 ShadowMap::ShadowMap(const std::string &vertexPath, const std::string &fragmentPath)
 {
@@ -27,15 +28,15 @@ void ShadowMap::init(const std::string& vertexPath, const std::string& fragmentP
 }
 
 
-void ShadowMap::drawSceneRelateToLighting(const std::vector<std::shared_ptr<Cube>>& cubes)
+void ShadowMap::drawSceneRelateToLighting(Cube aCubes[], size_t aSize)
 {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-    for (const auto& cube : cubes)
+    for (size_t i = 0; i < aSize; ++i)
     {
-        depthShader.setMat4("model", cube->getModelMatrix());
-        cube->draw();
+        depthShader.setMat4("model", aCubes[i].getModelMatrix());
+        aCubes[i].draw();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

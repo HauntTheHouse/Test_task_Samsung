@@ -19,7 +19,7 @@ void GameObject::connectShader(const std::string& vertexPath, const std::string&
     shaderObject.init(vertexPath, fragmentPath);
 }
 
-void GameObject::connectShader(Shader shader)
+void GameObject::connectShader(const Shader& shader)
 {
     shaderObject = shader;
 }
@@ -97,6 +97,11 @@ void GameObject::setLighting(const DirLighting& light)
 void GameObject::setPosition(float x, float y, float z)
 {
     position = glm::vec3(x, y, z);
+}
+
+void GameObject::setPosition(const glm::vec3& aPosition)
+{
+    position = aPosition;
 }
 
 void GameObject::setRotate(float angle, float xRot, float yRot, float zRot)
@@ -252,4 +257,10 @@ void Cube::setModelMatrix()
     model = glm::translate(model, position);
     model = glm::rotate(model, rotateAngle, rotatePosition);
     model = glm::scale(model, glm::vec3(size));
+}
+
+void Cube::setPosition(const glm::vec3& aPosition)
+{
+    position = aPosition;
+    body.setWorldTransform(btTransform(btQuaternion(btVector3(rotatePosition.x, rotatePosition.y, rotatePosition.z), rotateAngle), btVector3(position.x, position.y, position.z)));
 }

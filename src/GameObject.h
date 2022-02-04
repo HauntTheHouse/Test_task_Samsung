@@ -49,7 +49,7 @@ public:
     virtual ~GameObject() {};
 
     void connectShader(const std::string& vertexPath, const std::string& fragmentPath);
-    void connectShader(Shader shader);
+    void connectShader(const Shader& shader);
     Shader* getShader();
 
     void addTexture(const std::string &imagePath);
@@ -60,7 +60,8 @@ public:
     virtual void setModelMatrix() = 0;
     glm::mat4 getModelMatrix() const { return model; };
 
-    void setPosition(float x, float y, float z);
+    virtual void setPosition(float x, float y, float z);
+    virtual void setPosition(const glm::vec3& aPosition);
     void setRotate(float angle, float xRot, float yRot, float zRot);
 
     const std::vector<float> &getVertices() const;
@@ -104,8 +105,9 @@ private:
 class Cube : public GameObject
 {
 public:
-    Cube(const glm::vec3& pos, float objSize);
+    Cube(const glm::vec3& aPos = glm::vec3(0.0f), float aObjSize = 0.3f);
     void setModelMatrix() override;
+    void setPosition(const glm::vec3& aPosition) override;
     btRigidBody* getRigidBody() { return &body; }
 
 private:

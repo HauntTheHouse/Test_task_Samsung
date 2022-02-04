@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
-project(test_task_samsung_source_code)
+project(Test_task_Samsung)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD_LIBRARIES "-static-libgcc -static-libstdc++ ${CMAKE_CXX_STANDARD_LIBRARIES}")
 
+file(GLOB SRC_LIST CONFIGURE_DEPENDS
+    src/*.h
+    src/*.cpp
+)
+
+#message("SRC_LIST" )
 add_executable(${PROJECT_NAME}
-	src/main.cpp
-	src/Shader.cpp src/Shader.h
-	src/GameObject.cpp src/GameObject.h
-	src/ShadowMap.cpp src/ShadowMap.h
-	src/DirLighting.h
+	${SRC_LIST}
 	lib/glad/src/glad.c)
 
 # add GLFW

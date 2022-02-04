@@ -19,7 +19,7 @@ public:
 
     Shader* getShader() { return &depthShader; }
     unsigned int getDepthMap() const { return depthMap; }
-    void drawSceneRelateToLighting(const std::vector<std::shared_ptr<Cube>>& cubes);
+    void drawSceneRelateToLighting(Cube mCubes[], size_t mSize);
 };
 
 
