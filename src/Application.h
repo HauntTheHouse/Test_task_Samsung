@@ -19,6 +19,8 @@ public:
 	Application(const glm::ivec2& aScreenResolution, const std::string& aAppName);
 	~Application();
 
+	int run();
+
 private:
 	struct WindowDeleter
 	{
@@ -34,10 +36,7 @@ private:
 	double mDeltaTime, mLastFrame;
 
 	Card mCard;
-	//std::vector<Cube> mCubes;
-	size_t mCubeIter;
-	Cube mCubes[64];
-
+	std::vector<std::shared_ptr<Cube>> mCubes;
 
 	DirLighting mLighting;
 	ShadowMap mShadowMap;

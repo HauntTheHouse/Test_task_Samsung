@@ -8,7 +8,7 @@ Application::Application(const glm::ivec2& aScreenResolution, const std::string&
 	, mDeltaTime(0.0)
 	, mLastFrame(0.0)
 	, mCard(glm::vec3(0.0f, 0.0f, 0.0f), 2.5f)
-	, mCubeIter(0)
+	//, mCubeIter(0)
 	//, mShadowMap("shaders/depthShader.vert", "shaders/depthShader.frag")
 	//, mShaderObject("shaders/object.vert", "shaders/object.frag")
 	, mCamPosition(0.0f, 5.0f, 11.0f)
@@ -25,16 +25,9 @@ Application::Application(const glm::ivec2& aScreenResolution, const std::string&
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	//auto winDeleter = [](GLFWwindow* window)
-	//{
-	//	glfwDestroyWindow(window);
-	//};
-
 	mWindow = std::unique_ptr<GLFWwindow, WindowDeleter>(
 		glfwCreateWindow(aScreenResolution.x, aScreenResolution.y, mAppName.c_str(), nullptr, nullptr)
 	);
-
-	std::cout << sizeof(mWindow) << std::endl;
 
 	if (!mWindow)
 	{
@@ -82,10 +75,11 @@ Application::Application(const glm::ivec2& aScreenResolution, const std::string&
 	mLightSpaceMatrix = lightProjection * lightView;
 
 
-	mCard.connectShader(Shader(mShaderObject.getVertexShaderId(), mShaderObject.getFragmentShaderId()));
+	mCard.connectShader(&mShaderObject);
 	mCard.addTexture("images/king1.png");
 	mCard.setVertexAttributes();
 	mCard.setLighting(mLighting);
+	//mCard.getShader()->setVec3("colorIfWhite", mCard.getColour());
 	mCard.getShader()->setMat4("view", mView);
 	mCard.getShader()->setMat4("projection", mProjection);
 	mCard.getShader()->setMat4("lightSpaceMatrix", mLightSpaceMatrix);
@@ -93,44 +87,49 @@ Application::Application(const glm::ivec2& aScreenResolution, const std::string&
 
 	mDynamicsWorld.addRigidBody(mCard.getRigidBody());
 
-	for (auto& cube : mCubes)
-	{
-		cube.connectShader(Shader(mShaderObject.getVertexShaderId(), mShaderObject.getFragmentShaderId()));
-		cube.addTexture("images/dice5.png");
-		cube.setVertexAttributes();
-		cube.setLighting(mLighting);
-		cube.getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f, rand_from_0f_to_1f, rand_from_0f_to_1f));
-		cube.getShader()->setMat4("view", mView);
-		cube.getShader()->setMat4("projection", mProjection);
-		cube.getShader()->setMat4("lightSpaceMatrix", mLightSpaceMatrix);
-		//app->mDynamicsWorld.addRigidBody(cube.getRigidBody());
-	}
+	//for (auto& cube : mCubes)
+	//{
+	//	cube.connectShader(Shader(mShaderObject.getVertexShaderId(), mShaderObject.getFragmentShaderId()));
+	//	cube.addTexture("images/dice5.png");
+	//	cube.setVertexAttributes();
+	//	cube.setLighting(mLighting);
+	//	//cube.getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f, rand_from_0f_to_1f, rand_from_0f_to_1f));
+	//	cube.getShader()->setMat4("view", mView);
+	//	cube.getShader()->setMat4("projection", mProjection);
+	//	cube.getShader()->setMat4("lightSpaceMatrix", mLightSpaceMatrix);
+	//	//app->mDynamicsWorld.addRigidBody(cube.getRigidBody());
+	//}
 
-	mShadowMap.getShader()->use();
-	mShadowMap.getShader()->setMat4("lightSpaceMatrix", mLightSpaceMatrix);
+	mShadowMap.getShader().use();
+	mShadowMap.getShader().setMat4("lightSpaceMatrix", mLightSpaceMatrix);
+}
 
+Application::~Application() = default;
+
+int Application::run()
+{
 	while (!glfwWindowShouldClose(mWindow.get()))
 	{
 		double currentFrame = glfwGetTime();
 		mDeltaTime = currentFrame - mLastFrame;
 		mLastFrame = currentFrame;
 
-		mDynamicsWorld.stepSimulation(static_cast<btScalar>(mDeltaTime));
+		mDynamicsWorld.stepSimulation(static_cast<btScalar>(mDeltaTime), 2, static_cast<btScalar>(1.0/120.0));
 
 		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-		//projection = glm::mat4(1.0f);
-		//projection = glm::perspective(glm::radians(45.0f), SCREEN_WIDTH / static_cast<float>(SCREEN_HEIGHT), 0.1f, 100.0f);
+		//glfwGetFramebufferSize(mWindow.get(), &mScreenResolution.x, &mScreenResolution.y);
+		//mProjection = glm::mat4(1.0f);
+		//mProjection = glm::perspective(glm::radians(45.0f), mScreenResolution.x / static_cast<float>(mScreenResolution.y), 0.1f, 100.0f);
 
-		for (size_t i = 0; i < mCubeIter; ++i)
-			mCubes[i].setModelMatrix();
+		for (auto& cube : mCubes)
+			cube->setModelMatrix();
 
-		mShadowMap.getShader()->use();
-		mShadowMap.drawSceneRelateToLighting(mCubes, 64);
+		mShadowMap.getShader().use();
+		mShadowMap.drawSceneRelateToLighting(mCubes);
 
-		glViewport(0, 0, aScreenResolution.x, aScreenResolution.y);
+		glViewport(0, 0, mScreenResolution.x, mScreenResolution.y);
 
 		mCard.getShader()->use();
 		glActiveTexture(GL_TEXTURE0);
@@ -142,32 +141,33 @@ Application::Application(const glm::ivec2& aScreenResolution, const std::string&
 		mCard.getShader()->setInt("shadowMap", 1);
 
 		mCard.getShader()->setMat4("model", mCard.getModelMatrix());
-		//mCard.getShader()->setMat4("projection", mProjection);
+		mCard.getShader()->setVec3("materialColor", mCard.getColour());
+		mCard.getShader()->setMat4("projection", mProjection);
 		mCard.draw();
 
 		for (auto& cube : mCubes)
 		{
-			cube.getShader()->use();
+			cube->getShader()->use();
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, cube.getTextureId());
-			cube.getShader()->setInt("objectTexture", 0);
+			glBindTexture(GL_TEXTURE_2D, cube->getTextureId());
+			cube->getShader()->setInt("objectTexture", 0);
 
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, mShadowMap.getDepthMap());
-			cube.getShader()->setInt("shadowMap", 1);
+			cube->getShader()->setInt("shadowMap", 1);
 
-			cube.getShader()->setMat4("model", cube.getModelMatrix());
-			cube.getShader()->setMat4("projection", mProjection);
-			cube.draw();
+			cube->getShader()->setVec3("materialColor", cube->getColour());
+			cube->getShader()->setMat4("model", cube->getModelMatrix());
+			cube->getShader()->setMat4("projection", mProjection);
+			cube->draw();
 		}
 
 		glfwSwapBuffers(mWindow.get());
 		glfwPollEvents();
 	}
 	glfwTerminate();
+	return 0;
 }
-
-Application::~Application() {};
 
 void Application::processKeyboardInput(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -188,22 +188,26 @@ void Application::processMouseInput(GLFWwindow* window, int button, int action, 
 		glm::vec3 ray = app->convertScreenCoordsToWorldRayVector(xpos, ypos);
 		glm::vec3 coords = app->findRayIntersectionWithXYplaneAndXZplane(ray, 0.3f);
 
-		//auto cube = Cube(coords, 0.3f);
-		//cube.connectShader(Shader(app->mShaderObject.getVertexShaderId(), app->mShaderObject.getFragmentShaderId()));
-		//cube.addTexture("images/dice5.png");
-		//cube.setVertexAttributes();
-		//cube.setLighting(app->mLighting);
+		auto cube = std::make_shared<Cube>(coords, 0.3f);
+		cube->connectShader(&app->mShaderObject);
+		cube->addTexture("images/dice5.png");
+		cube->setVertexAttributes();
+		cube->setLighting(app->mLighting);
+		cube->setColour(rand_from_0f_to_1f, rand_from_0f_to_1f, rand_from_0f_to_1f, 1.0f);
 		//cube.getShader()->setVec3("colorIfWhite", glm::vec3(rand_from_0f_to_1f, rand_from_0f_to_1f, rand_from_0f_to_1f));
-		//cube.getShader()->setMat4("view", app->mView);
-		//cube.getShader()->setMat4("projection", app->mProjection);
-		//cube.getShader()->setMat4("lightSpaceMatrix", app->mLightSpaceMatrix);
+		cube->getShader()->setMat4("view", app->mView);
+		cube->getShader()->setMat4("projection", app->mProjection);
+		cube->getShader()->setMat4("lightSpaceMatrix", app->mLightSpaceMatrix);
 		//static auto iter = app->mCubes.begin();
-		auto& cube = app->mCubes[app->mCubeIter++];
-		cube.setPosition(coords);
-		cube.setModelMatrix();
-		app->mDynamicsWorld.addRigidBody(cube.getRigidBody());
+		//auto& cube = app->mCubes[app->mCubeIter++];
+		cube->setPosition(coords);
+		cube->setColour(rand_from_0f_to_1f, rand_from_0f_to_1f, rand_from_0f_to_1f, 1.0f);
+		cube->setModelMatrix();
+		app->mDynamicsWorld.addRigidBody(cube->getRigidBody());
+
 		//iter++;
-		//app->mCubes.emplace_back(cube);
+		app->mCubes.emplace_back(std::move(cube));
+
 		//app->mCubes.
 	}
 }

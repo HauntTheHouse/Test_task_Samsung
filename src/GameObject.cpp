@@ -14,19 +14,19 @@ GameObject::GameObject(const glm::vec3& pos, float objSize)
 {
 }
 
-void GameObject::connectShader(const std::string& vertexPath, const std::string& fragmentPath)
-{
-    shaderObject.init(vertexPath, fragmentPath);
-}
+//void GameObject::connectShader(const std::string& vertexPath, const std::string& fragmentPath)
+//{
+//    shaderObject.init(vertexPath, fragmentPath);
+//}
 
-void GameObject::connectShader(const Shader& shader)
+void GameObject::connectShader(Shader* shader)
 {
     shaderObject = shader;
 }
 
 Shader* GameObject::getShader()
 {
-    return &shaderObject;
+    return shaderObject;
 }
 
 void GameObject::addTexture(const std::string &imagePath)
@@ -73,25 +73,25 @@ void GameObject::setVertexAttributes()
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
 }
 
 void GameObject::setLighting(const DirLighting& light)
 {
-    shaderObject.use();
-    shaderObject.setVec3("dirLight.direction", light.getDirection());
-    shaderObject.setVec3("dirLight.ambient", light.getAmbient());
-    shaderObject.setVec3("dirLight.diffuse", light.getDiffuse());
-    shaderObject.setVec3("dirLight.specular", light.getSpecular());
+    shaderObject->use();
+    shaderObject->setVec3("dirLight.direction", light.getDirection());
+    shaderObject->setVec3("dirLight.ambient", light.getAmbient());
+    shaderObject->setVec3("dirLight.diffuse", light.getDiffuse());
+    shaderObject->setVec3("dirLight.specular", light.getSpecular());
 }
 
 void GameObject::setPosition(float x, float y, float z)
@@ -108,6 +108,26 @@ void GameObject::setRotate(float angle, float xRot, float yRot, float zRot)
 {
     rotateAngle = angle;
     rotatePosition = glm::vec3(xRot, yRot, zRot);
+}
+
+void GameObject::setColour(float r, float g, float b, float a)
+{
+    colour = glm::vec3(r, g, b);
+
+    auto offset{ 8 };
+    auto strideSize{ 12 };
+    for (size_t i = 0; i < vertices.size(); i += 12)
+    {
+        vertices[i + offset + 0] = r;
+        vertices[i + offset + 1] = g;
+        vertices[i + offset + 2] = b;
+        vertices[i + offset + 3] = a;
+    }
+}
+
+void GameObject::setColour(const glm::vec4& aColour)
+{
+    GameObject::setColour(aColour.r, aColour.g, aColour.b, aColour.a);
 }
 
 
@@ -142,10 +162,10 @@ Card::Card(const glm::vec3& pos, float aSize)
 void Card::fillVertices()
 {
     vertices = {
-            -1.0f, 0.0f,  1.0f,     0.0f, 1.0f, 0.0f,     0.0f,  0.0f,
-            -1.0f, 0.0f, -1.0f,     0.0f, 1.0f, 0.0f,     0.0f,  1.0f,
-             1.0f, 0.0f, -1.0f,     0.0f, 1.0f, 0.0f,     1.0f,  1.0f,
-             1.0f, 0.0f,  1.0f,     0.0f, 1.0f, 0.0f,     1.0f,  0.0f,
+            -1.0f, 0.0f,  1.0f,    0.0f, 1.0f, 0.0f,    0.0f,  0.0f,
+            -1.0f, 0.0f, -1.0f,    0.0f, 1.0f, 0.0f,    0.0f,  1.0f,
+             1.0f, 0.0f, -1.0f,    0.0f, 1.0f, 0.0f,    1.0f,  1.0f,
+             1.0f, 0.0f,  1.0f,    0.0f, 1.0f, 0.0f,    1.0f,  0.0f,
     };
 }
 
@@ -187,40 +207,40 @@ btVector3 Cube::calculateLocalInertia()
 void Cube::fillVertices() {
     vertices = {
             // front side
-            -1.0f, -1.0f,  1.0f,    0.0f,  0.0f,  1.0f,     0.0f, 0.0f,
-            -1.0f,  1.0f,  1.0f,    0.0f,  0.0f,  1.0f,     0.0f, 1.0f,
-             1.0f,  1.0f,  1.0f,    0.0f,  0.0f,  1.0f,     1.0f, 1.0f,
-             1.0f, -1.0f,  1.0f,    0.0f,  0.0f,  1.0f,     1.0f, 0.0f,
+            -1.0f, -1.0f,  1.0f,    0.0f,  0.0f,  1.0f,    0.0f, 0.0f,
+            -1.0f,  1.0f,  1.0f,    0.0f,  0.0f,  1.0f,    0.0f, 1.0f,
+             1.0f,  1.0f,  1.0f,    0.0f,  0.0f,  1.0f,    1.0f, 1.0f,
+             1.0f, -1.0f,  1.0f,    0.0f,  0.0f,  1.0f,    1.0f, 0.0f,
 
             // left side
-            -1.0f, -1.0f, -1.0f,   -1.0f,  0.0f,  0.0f,     0.0f, 0.0f,
-            -1.0f,  1.0f, -1.0f,   -1.0f,  0.0f,  0.0f,     0.0f, 1.0f,
-            -1.0f,  1.0f,  1.0f,   -1.0f,  0.0f,  0.0f,     1.0f, 1.0f,
-            -1.0f, -1.0f,  1.0f,   -1.0f,  0.0f,  0.0f,     1.0f, 0.0f,
+            -1.0f, -1.0f, -1.0f,   -1.0f,  0.0f,  0.0f,    0.0f, 0.0f,
+            -1.0f,  1.0f, -1.0f,   -1.0f,  0.0f,  0.0f,    0.0f, 1.0f,
+            -1.0f,  1.0f,  1.0f,   -1.0f,  0.0f,  0.0f,    1.0f, 1.0f,
+            -1.0f, -1.0f,  1.0f,   -1.0f,  0.0f,  0.0f,    1.0f, 0.0f,
 
             // back side
-             1.0f, -1.0f, -1.0f,    0.0f,  0.0f, -1.0f,     0.0f, 0.0f,
-             1.0f,  1.0f, -1.0f,    0.0f,  0.0f, -1.0f,     0.0f, 1.0f,
-            -1.0f,  1.0f, -1.0f,    0.0f,  0.0f, -1.0f,     1.0f, 1.0f,
-            -1.0f, -1.0f, -1.0f,    0.0f,  0.0f, -1.0f,     1.0f, 0.0f,
+             1.0f, -1.0f, -1.0f,    0.0f,  0.0f, -1.0f,    0.0f, 0.0f,
+             1.0f,  1.0f, -1.0f,    0.0f,  0.0f, -1.0f,    0.0f, 1.0f,
+            -1.0f,  1.0f, -1.0f,    0.0f,  0.0f, -1.0f,    1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,    0.0f,  0.0f, -1.0f,    1.0f, 0.0f,
 
             // right side
-             1.0f, -1.0f,  1.0f,    1.0f,  0.0f,  0.0f,     0.0f, 0.0f,
-             1.0f,  1.0f,  1.0f,    1.0f,  0.0f,  0.0f,     0.0f, 1.0f,
-             1.0f,  1.0f, -1.0f,    1.0f,  0.0f,  0.0f,     1.0f, 1.0f,
-             1.0f, -1.0f, -1.0f,    1.0f,  0.0f,  0.0f,     1.0f, 0.0f,
+             1.0f, -1.0f,  1.0f,    1.0f,  0.0f,  0.0f,    0.0f, 0.0f,
+             1.0f,  1.0f,  1.0f,    1.0f,  0.0f,  0.0f,    0.0f, 1.0f,
+             1.0f,  1.0f, -1.0f,    1.0f,  0.0f,  0.0f,    1.0f, 1.0f,
+             1.0f, -1.0f, -1.0f,    1.0f,  0.0f,  0.0f,    1.0f, 0.0f,
 
              // up side
-            -1.0f,  1.0f,  1.0f,    0.0f,  1.0f,  0.0f,     0.0f, 0.0f,
-            -1.0f,  1.0f, -1.0f,    0.0f,  1.0f,  0.0f,     0.0f, 1.0f,
-             1.0f,  1.0f, -1.0f,    0.0f,  1.0f,  0.0f,     1.0f, 1.0f,
-             1.0f,  1.0f,  1.0f,    0.0f,  1.0f,  0.0f,     1.0f, 0.0f,
+            -1.0f,  1.0f,  1.0f,    0.0f,  1.0f,  0.0f,    0.0f, 0.0f,
+            -1.0f,  1.0f, -1.0f,    0.0f,  1.0f,  0.0f,    0.0f, 1.0f,
+             1.0f,  1.0f, -1.0f,    0.0f,  1.0f,  0.0f,    1.0f, 1.0f,
+             1.0f,  1.0f,  1.0f,    0.0f,  1.0f,  0.0f,    1.0f, 0.0f,
 
              // down side
-            -1.0f, -1.0f, -1.0f,    0.0f, -1.0f,  0.0f,     0.0f, 0.0f,
-            -1.0f, -1.0f,  1.0f,    0.0f, -1.0f,  0.0f,     0.0f, 1.0f,
-             1.0f, -1.0f,  1.0f,    0.0f, -1.0f,  0.0f,     1.0f, 1.0f,
-             1.0f, -1.0f, -1.0f,    0.0f, -1.0f,  0.0f,     1.0f, 0.0f,
+            -1.0f, -1.0f, -1.0f,    0.0f, -1.0f,  0.0f,    0.0f, 0.0f,
+            -1.0f, -1.0f,  1.0f,    0.0f, -1.0f,  0.0f,    0.0f, 1.0f,
+             1.0f, -1.0f,  1.0f,    0.0f, -1.0f,  0.0f,    1.0f, 1.0f,
+             1.0f, -1.0f, -1.0f,    0.0f, -1.0f,  0.0f,    1.0f, 0.0f,
     };
 }
 

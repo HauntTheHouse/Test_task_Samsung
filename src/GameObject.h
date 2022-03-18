@@ -3,44 +3,14 @@
 
 #include <vector>
 #include <string>
+
 #include <glm/glm.hpp>
-#include "Shader.h"
-#include "DirLighting.h"
+
 #include <btBulletDynamicsCommon.h>
 
-class CustomMotionState : public btMotionState
-{
-public:
-    CustomMotionState(glm::vec3& aPosition, float& aRotateAngle, glm::vec3& aRotatePosition)
-        : mPosition(aPosition)
-        , mRotateAngle(aRotateAngle)
-        , mRotatePosition(aRotatePosition)
-    {
-    }
-
-    void getWorldTransform(btTransform& worldTrans) const override
-    {
-        worldTrans.setOrigin(btVector3(mPosition.x, mPosition.y, mPosition.z));
-        worldTrans.setRotation(btQuaternion(btVector3(mRotatePosition.x, mRotatePosition.y, mRotatePosition.z), mRotateAngle));
-    }
-
-    void setWorldTransform(const btTransform& worldTrans) override
-    {
-        mPosition.x = worldTrans.getOrigin().x();
-        mPosition.y = worldTrans.getOrigin().y();
-        mPosition.z = worldTrans.getOrigin().z();
-
-        mRotateAngle = worldTrans.getRotation().getAngle();
-        mRotatePosition.x = worldTrans.getRotation().getAxis().x();
-        mRotatePosition.y = worldTrans.getRotation().getAxis().y();
-        mRotatePosition.z = worldTrans.getRotation().getAxis().z();
-    }
-
-private:
-    glm::vec3& mPosition;
-    float& mRotateAngle;
-    glm::vec3& mRotatePosition;
-};
+#include "Shader.h"
+#include "DirLighting.h"
+#include "MotionState.h"
 
 class GameObject
 {
@@ -48,8 +18,8 @@ public:
     GameObject(const glm::vec3& pos, float objSize);
     virtual ~GameObject() {};
 
-    void connectShader(const std::string& vertexPath, const std::string& fragmentPath);
-    void connectShader(const Shader& shader);
+    //void connectShader(const std::string& vertexPath, const std::string& fragmentPath);
+    void connectShader(Shader* shader);
     Shader* getShader();
 
     void addTexture(const std::string &imagePath);
@@ -63,14 +33,17 @@ public:
     virtual void setPosition(float x, float y, float z);
     virtual void setPosition(const glm::vec3& aPosition);
     void setRotate(float angle, float xRot, float yRot, float zRot);
+    void setColour(float r, float g, float b, float a);
+    void setColour(const glm::vec4& aColour);
+    glm::vec3 getColour() const { return colour; };
 
     const std::vector<float> &getVertices() const;
     const std::vector<unsigned int> &getIndices() const;
     void draw() const;
 
 protected:
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<GLfloat> vertices;
+    std::vector<GLuint> indices;
 
     glm::mat4 model;
 
@@ -78,11 +51,12 @@ protected:
     glm::vec3 position;
     float rotateAngle{ 0.0f };
     glm::vec3 rotatePosition{ 0.f, 0.f, 0.f };
+    glm::vec3 colour{ 1.0f, 1.0f, 1.0f };
 
     GLuint VAO{}, VBO{}, EBO{};
     GLuint textureId{};
 
-    Shader shaderObject;
+    Shader* shaderObject;
     virtual void fillVertices() = 0;
     virtual void fillIndices() = 0;
 };
@@ -112,7 +86,7 @@ public:
 
 private:
     btBoxShape shape;
-    CustomMotionState motionState;
+    MotionState motionState;
     btRigidBody body;
 
     void fillVertices() override;

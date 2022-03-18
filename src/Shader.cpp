@@ -19,30 +19,21 @@ void Shader::init(const std::string& vertexPath, const std::string& fragmentPath
     std::ifstream vShaderFile;
     std::ifstream fShaderFile;
 
-    vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try
-    {
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::stringstream vShaderStream, fShaderStream;
+    vShaderFile.open(vertexPath);
+    fShaderFile.open(fragmentPath);
+    std::stringstream vShaderStream, fShaderStream;
 
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
+    vShaderStream << vShaderFile.rdbuf();
+    fShaderStream << fShaderFile.rdbuf();
 
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
-    }
-    catch (std::ifstream::failure e)
-    {
-        std::cout << "Error: Shader file was not successfully read" << std::endl;
-    }
+    vertexCode = vShaderStream.str();
+    fragmentCode = fShaderStream.str();
 
     compileShaders(vertexCode.c_str(), fragmentCode.c_str());
     createProgram();
 
-    //glDeleteShader(vertexShader);
-    //glDeleteShader(fragmentShader);
+    glDeleteShader(vertexId);
+    glDeleteShader(fragmentId);
 }
 
 unsigned int Shader::getVertexShaderId() const

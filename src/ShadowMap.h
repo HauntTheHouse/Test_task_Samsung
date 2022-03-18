@@ -9,7 +9,9 @@ class ShadowMap
 {
 private:
     const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
-    unsigned int depthMapFBO, depthMap;
+    GLuint depthMapFBO{};
+    GLuint depthMap{};
+
     Shader depthShader;
 public:
     ShadowMap() = default;
@@ -17,9 +19,9 @@ public:
     ~ShadowMap() {}
     void init(const std::string& vertexPath, const std::string& fragmentPath);
 
-    Shader* getShader() { return &depthShader; }
+    Shader& getShader() { return depthShader; }
     unsigned int getDepthMap() const { return depthMap; }
-    void drawSceneRelateToLighting(Cube mCubes[], size_t mSize);
+    void drawSceneRelateToLighting(const std::vector<std::shared_ptr<Cube>>& cubes);
 };
 
 

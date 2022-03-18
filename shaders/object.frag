@@ -14,12 +14,10 @@ struct DirLight {
     vec3 specular;
 };
 uniform DirLight dirLight;
-//uniform mat4 view;
-
 
 uniform sampler2D objectTexture;
 uniform sampler2D shadowMap;
-uniform vec3 colorIfWhite;
+uniform vec3 materialColor;
 
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 fragPos);
 float shadowCalculation(vec4 fragPosLightSpace);
@@ -37,8 +35,6 @@ void main()
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 fragPos)
 {
     vec3 texColor = vec3(texture(objectTexture, TexCoords));
-    if (texColor.r == 1.0f && texColor.g == 1.0f && texColor.b == 1.0f)
-        texColor = colorIfWhite;
 
     vec3 ambient = light.ambient * texColor;
 
@@ -54,7 +50,7 @@ vec3 calcDirLight(DirLight light, vec3 normal, vec3 fragPos)
 
     float shadow = shadowCalculation(FragPosLightSpace);
 
-    return (ambient + (1.0f - shadow) * (diffuse + specular));
+    return (ambient + (1.0f - shadow) * (diffuse + specular)) * materialColor;
 }
 
 float shadowCalculation(vec4 fragPosLightSpace)
